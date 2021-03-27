@@ -1,0 +1,642 @@
+from tkinter import*
+from tkinter import ttk
+from tkinter.ttk import Combobox
+from bs4 import BeautifulSoup
+import os
+from selenium import webdriver
+from selenium.webdriver.chrome.options import  Options
+from datetime import datetime, timedelta
+import datetime
+import random
+
+
+class SehirCoursePlanner(Frame): # our main class
+    def __init__(self,parent):
+        Frame.__init__(self, parent)
+        self.parent = parent
+
+
+        self.initUI()
+        self.pack(fill=BOTH)
+
+
+
+
+
+    def initUI(self): # our GUI, frames and widgets
+        frame1 = Frame(self)
+        frame1.pack(fill=X)
+        self.label_header = Label(self, text="SEHIR COURSE PLANNER", bg="black",fg="dodger blue", font=("helcetica",15))
+        self.label_header.pack(fill=X,in_=frame1)
+        frame2 = Frame(self)
+        frame2.pack(fill=X)
+        self.label_url = Label(self, text="Course Offerings Url:",font=("arial black",10) )
+        self.label_url.pack(in_=frame2,side= LEFT, padx=45, pady=5)
+        self.url_var = StringVar()
+        self.entry_url = Entry(self, width= 80,bg="gray",textvariable=self.url_var)
+        self.entry_url.pack(in_=frame2,pady=7,side=LEFT)
+        self.fetch_button= Button(self,text="Fetch Courses", width=15, fg="red", font=("arial black",9),command=self.fetch_courses)
+        self.fetch_button.pack(in_=frame2, pady= 5)
+        self.url_var.set("https://www.sehir.edu.tr/tr/duyurular/2019_2020_Akademik_Yili_Bahar_Donemi_Ders_Programi")
+
+        frame3=Frame(self, relief="solid",bd=2)
+        frame3.pack(fill=BOTH,padx=10)
+        frame1_in_3= Frame(self)
+        frame2_in_3=Frame(self)
+        frame1_in_3.pack(in_=frame3, fill=X)
+        frame2_in_3.pack(in_=frame3, fill=X)
+
+
+
+
+        self.label_filter =Label(self, text="Filter:",font=("arial black",10) )
+        self.label_filter.pack(in_=frame1_in_3,side=LEFT,padx= 40 , pady= 5)
+        self.search_var = StringVar()
+        self.search_var.trace("w", lambda name, index, mode: self.filter_course())
+        self.filter_entry= Entry(self,width=30,relief="solid",textvariable=self.search_var)
+        self.filter_entry.pack(in_=frame1_in_3,side=LEFT, pady=10)
+        self.label_selected = Label(self, text="Selected Courses", font=("arial black", 10))
+        self.label_selected.pack(in_=frame1_in_3,side=RIGHT,padx=100)
+        self.box_courses = Listbox(self,bd=1,relief="solid",width=60,height=5)
+
+
+        self.box_courses.pack(in_=frame2_in_3,side=LEFT,padx=10, pady=10)
+        self.scrollbar = Scrollbar(self, orient="vertical")
+        self.scrollbar.config(command=self.box_courses.yview)
+        self.scrollbar.pack(side=LEFT, fill=Y, in_=frame2_in_3)
+
+        self.box_courses.config(yscrollcommand=self.scrollbar.set)
+        self.button_add = Button(self,text="Add",font=("arial black",9),width=5,bg="green",fg="white",command=self.add_course)
+        self.button_add.pack(in_=frame2_in_3,side=LEFT,padx=10)
+        self.button_remove = Button(self, text="Remove", font=("arial black", 9), width=7, bg="red",command=self.delete_course)
+        self.button_remove.pack(in_=frame2_in_3,side=LEFT,pady=10,padx=10)
+        self.box_selected_courses = Listbox(self, bd=1, relief="solid", width=60, height=5)
+        self.scrollbar2 = Scrollbar(self, orient="vertical")
+        self.scrollbar2.config(command=self.box_selected_courses.yview)
+        self.scrollbar2.pack(side=RIGHT, fill=Y, in_=frame2_in_3)
+
+        self.box_selected_courses.pack(in_=frame2_in_3, side=RIGHT, pady=10, padx=10)
+        self.box_courses.bind("<<ListboxSelect>>", self.listbox_choice)
+
+
+
+
+        frame_mid_1=Frame(self)
+
+        frame_mid_1.pack(fill=X,pady=10)
+        self.label_black=Label(self,bg="black",width=10)
+        self.label_black.pack(in_=frame_mid_1,side=LEFT)
+
+        for i in range(7):
+
+            self.days_label= Label(self,bg="#42A7B7", text=data.days[i],font=("Arial black",10),width=11)
+            self.days_label.pack(in_=frame_mid_1,side=LEFT)
+        self.warning_label = Label(self, bg="SystemButtonFace")
+        self.warning_label.pack(in_=frame_mid_1,side=RIGHT,padx=15)
+
+        self.cell_object = []
+        b = ":30"
+        c = ":00"
+        for i in range(13):
+            if i == 0:
+                data.time.append("0"+ str(i + 9) + c + "-" + "0" + str(i + 9) + b)
+                data.time.append("0" +str(i + 9) + b + "-" + str(i + 10) + c)
+
+            else:
+                data.time.append(str(i+9)+c+"-"+str(i+9)+b)
+                data.time.append(str(i+9)+b+"-"+str(i+10)+c)
+        print(data.time)
+
+        for i in range(26):
+            frame=Frame(self)
+            frame.pack(fill=X)
+            cells.frames.append(frame)
+
+            self.times_label = Label(self, bg="#42A7B7", text=data.time[i], font=("Arial black", 9), width=9)
+            self.times_label.pack(in_=cells.frames[i], side=LEFT)
+            for k in range(7):
+                self.cell_label = Label(self, bg="green", text="",font=("Arial black", 9), width=12)
+                self.cell_label.pack(in_=cells.frames[i], side=LEFT,padx=1,pady=1)
+                cells.cell_data[self.cell_label]={data.days[k]:data.time[i]}
+                self.cell_object.append(self.cell_label)
+                # print(i)
+        print(cells.cell_data)
+        self.cell_course_reset = {}
+        self.control = 1
+
+        # self.resetUI()
+        self.filter_course()
+
+        # list(cells.cell_data.keys())[7].configure(bg="red")
+
+
+    def resetUI(self): # renk olayı halledilince çözülebilir.
+            print(len(cells.colors))
+            self.warning_label.configure(bg="SystemButtonFace",text="")
+            self.control = 1
+            for label in self.cell_object:
+                label.configure(bg="green",text="")
+
+
+        # for i in range(len(data.course_data.keys())):
+
+            for i in range(len(list(self.cell_course_reset.values()))):
+                    list(self.cell_course_reset.keys())[i].configure(bg=(list((list(self.cell_course_reset.values())[i]).values())[0]),text=list((list(self.cell_course_reset.values())[i]).keys())[0])
+                    print(list((list(self.cell_course_reset.values())[i]).values())[0])
+
+                    # print(list((list(self.cell_course_reset.values())[i]).values())[0])
+                    # label.
+
+
+
+
+
+
+    def fetch_courses(self):
+
+        def setup_driver():
+            chrome_options = Options()
+            chrome_options.add_argument("--headless")
+            driver = webdriver.Chrome(os.getcwd() + "/chromedriver", options=chrome_options)
+            return driver
+
+
+
+        def fetchtimetable(url):
+            driver = setup_driver()
+            driver.get(url)
+            driver.implicitly_wait(10)
+            elements = driver.find_elements_by_tag_name("tr")
+
+            for i in range(1, len(elements)):
+                sub_elements = elements[i].find_elements_by_tag_name("td")
+                data.course_data[sub_elements[0].text] = [sub_elements[2].text.split(), sub_elements[3].text.split()]  # strip or split
+                # print(sub_elements[2].text.split())
+                # print(sub_elements[0].text)
+                # print(sub_elements[2].text)
+                # print(sub_elements[3].text)
+                # self.box_courses.insert(i,(sub_elements[0].text,sub_elements[2].text,sub_elements[3].text))
+                # print(data.course_data) ***************************************************************************
+                # print(sub_elements[0].text,list(data.course_data.values())[i-1][0],list(data.course_data.values())[i-1][1])
+                if self.search_var.get() == "":
+                    if len(list(data.course_data.values())[i-1][0]) == 1 and len(list(data.course_data.values())[i-1][1]) == 1 : # one DAY one TIME
+                        a = (list(data.course_data.keys())[i - 1])
+
+                        self.box_courses.insert(i, ((list(data.course_data.keys())[i - 1]) , ((list(data.course_data.values())[i - 1])[0])[0] , ((list(data.course_data.values())[i-1])[1])[0]))
+
+                    elif len(list(data.course_data.values())[i-1][0]) != 1 and len(list(data.course_data.values())[i-1][1]) == 1 : # 2+ DAY one TIME
+                        for k in range(len((list(data.course_data.values())[i - 1])[0])-1):
+
+                            self.box_courses.insert(i,(list(data.course_data.keys())[i-1] ,((list(data.course_data.values())[i-1])[0])[k] , ((list(data.course_data.values())[i-1])[0])[k+1], ((list(data.course_data.values())[i-1])[1])[0]))
+
+                    elif len(list(data.course_data.values())[i-1][0]) != 1 and len(list(data.course_data.values())[i-1][1]) != 1 : # 2+ DAY 2+ TIME
+                        for k in range(len((list(data.course_data.values())[i - 1])[0])-1):
+
+                            self.box_courses.insert(i,(list(data.course_data.keys())[i-1] , ((list(data.course_data.values())[i-1])[0])[k] , ((list(data.course_data.values())[i-1])[0])[k+1] , ((list(data.course_data.values())[i-1])[1])[k] , ((list(data.course_data.values())[i-1])[1])[k+1]))
+
+                    elif len(list(data.course_data.values())[i-1][0]) == 1 and len(list(data.course_data.values())[i-1][1])!= 1: # one DAY 2+ TIME
+                        for k in range(len((list(data.course_data.values())[i - 1])[0]) - 1):
+                            self.box_courses.insert(i, (list(data.course_data.keys())[i - 1] , ((list(data.course_data.values())[i - 1])[0])[0] , ((list(data.course_data.values())[i-1])[1])[k] , ((list(data.course_data.values())[i-1])[1])[k+1]))
+
+                self.update()
+
+
+        fetchtimetable(self.entry_url.get())
+
+        print("fetching completed")
+
+
+
+    def filter_course(self):
+
+        entry = self.search_var.get()
+        self.box_courses.delete(0, END)
+        i = 0
+        for item in (data.course_data.keys()):
+            i +=1
+            if entry.lower() in item.lower():
+                if len(list(data.course_data.values())[i - 1][0]) == 1 and len(
+                        list(data.course_data.values())[i - 1][1]) == 1:  # one DAY one TIME
+                    aa = (item ,((list(data.course_data.values())[i - 1])[0])[0] ,((list(data.course_data.values())[i - 1])[1])[0])
+                    # self.box_courses.insert(i, " ".join(aa))
+                    self.box_courses.insert(i,aa)
+                elif len(list(data.course_data.values())[i - 1][0]) != 1 and len(
+                        list(data.course_data.values())[i - 1][1]) == 1:  # 2+ DAY one TIME
+                    for k in range(len((list(data.course_data.values())[i - 1])[0]) - 1):
+
+                        self.box_courses.insert(i, (list(data.course_data.keys())[i - 1] ,
+                                                    ((list(data.course_data.values())[i - 1])[0])[k] ,
+                                                    ((list(data.course_data.values())[i - 1])[0])[k + 1] ,
+                                                    ((list(data.course_data.values())[i - 1])[1])[0]))
+
+                elif len(list(data.course_data.values())[i - 1][0]) != 1 and len(
+                        list(data.course_data.values())[i - 1][1]) != 1:  # 2+ DAY 2+ TIME
+                    for k in range(len((list(data.course_data.values())[i - 1])[0]) - 1):
+
+                        self.box_courses.insert(i, (list(data.course_data.keys())[i - 1] ,
+                                                    ((list(data.course_data.values())[i - 1])[0])[k] ,
+                                                    ((list(data.course_data.values())[i - 1])[0])[k + 1] ,
+                                                    ((list(data.course_data.values())[i - 1])[1])[k] ,
+                                                    ((list(data.course_data.values())[i - 1])[1])[k + 1]))
+
+                elif len(list(data.course_data.values())[i - 1][0]) == 1 and len(
+                        list(data.course_data.values())[i - 1][1]) != 1:  # one DAY 2+ TIME
+                    for k in range(len((list(data.course_data.values())[i - 1])[0]) - 1):
+                        self.box_courses.insert(i, (list(data.course_data.keys())[i - 1] ,
+                                                    ((list(data.course_data.values())[i - 1])[0])[0] ,
+                                                    ((list(data.course_data.values())[i - 1])[1])[k] ,
+                                                    ((list(data.course_data.values())[i - 1])[1])[k + 1]))
+
+                self.update()
+
+    def add_course(self):
+        values = [self.box_courses.get(idx) for idx in self.box_courses.curselection()]
+        selected_color = cells.colors[random.randrange(len(cells.colors))]
+        added = values[0][0]
+        if self.control == 0:
+            self.warning_label.configure(bg="red",text="Could not be added",font=("arial black",8))
+        else:
+            cells.colors.remove(selected_color)
+            data.selected_colors.append(selected_color)
+
+
+
+            # print(self.box_selected_courses.get(1))
+
+            print(values[0][0])
+
+            # print(values[0][0])
+
+            for i in range(len(data.course_data.keys())):
+                if added == list(data.course_data.keys())[i]:
+                    if added in data.selected_courses.keys():
+                        print("---------------------already exist-----------")
+                    else:
+                        confirmed = list(data.course_data.keys())[i]
+
+                        data.selected_courses[confirmed] = data.course_data[confirmed]
+                        self.box_selected_courses.insert(END, values[0])
+                        temp_day = []
+                        temp_time = {}
+                        temp_secondtime = {}
+                        for k in range(len(data.selected_courses[confirmed][0])):
+
+                            # print((data.selected_courses[confirmed][0])[k])
+                            temp_day.append((data.selected_courses[confirmed][0])[k])
+
+
+
+                        for j in range(len(data.selected_courses[confirmed][1])):
+                            # print((data.selected_courses[confirmed][1])[j])
+                            if (len(data.selected_courses[confirmed][1])) < 2: # ---------------------------tek saat  için eklendi---------------------------------------------------------------
+                                time= (data.selected_courses[confirmed][1])[0]
+
+                                hour = time[:2]
+                                minute = time[3:5]
+                                finish_hour = time[6:8]
+                                curr = datetime.datetime(2020, 8, 9, int(hour), int(minute), 00, 00)
+
+                                for x in range(2*(int(finish_hour) - int(hour))):
+                                    temp_time[curr.strftime("%H:%M") + "-" + (curr + timedelta(minutes=30)).strftime("%H:%M")]="time"
+
+                                    curr = curr + timedelta(minutes=30)
+
+                            else:  # ---------------------------çift saat sorunu için eklendi-------------------------------------------------------------------------------------
+                                time = (data.selected_courses[confirmed][1])[j]
+                                if j == 0:
+                                    hour = time[:2]
+                                    minute = time[3:5]
+                                    finish_hour = time[6:8]
+                                    curr = datetime.datetime(2020, 8, 9, int(hour), int(minute), 00, 00)
+
+                                    for x in range(2 * (int(finish_hour) - int(hour))):
+                                        temp_secondtime[curr.strftime("%H:%M") + "-" + (curr + timedelta(minutes=30)).strftime(
+                                            "%H:%M")] = "time"
+
+                                        curr = curr + timedelta(minutes=30)
+                                elif j == 1 :
+                                    hour = time[:2]
+                                    minute = time[3:5]
+                                    finish_hour = time[6:8]
+                                    curr = datetime.datetime(2020, 8, 9, int(hour), int(minute), 00, 00)
+
+                                    for x in range(2 * (int(finish_hour) - int(hour))):
+                                        temp_secondtime[str(x)] = curr.strftime("%H:%M") + "-" + (curr + timedelta(minutes=30)).strftime(
+                                                "%H:%M")
+
+                                        curr = curr + timedelta(minutes=30)
+
+
+
+                        print(temp_time.keys())
+                        print(temp_secondtime.keys())
+                        print(temp_secondtime.values())
+
+
+
+
+
+
+                         # --------------------------------------------ONE TIME-------------------------------------------------------
+                        if (len(data.selected_courses[confirmed][1])) < 2:# tek mi??
+                            for z in range(len(list(cells.cell_data.keys()))):
+                                for day in temp_day:
+                                    for time in temp_time.keys():
+
+                                        if day == list((list(cells.cell_data.values())[z]).keys())[0] and time == list((list(cells.cell_data.values())[z]).values())[0] :
+
+
+
+
+
+                                            print("------eşleşme-------")
+                                            print(time, day, list((list(cells.cell_data.values())[z]).values())[0], list((list(cells.cell_data.values())[z]).keys())[0])
+                                            print(list(cells.cell_data.keys())[z])
+                                            for item in self.cell_object:
+                                                if item == (list(cells.cell_data.keys())[z]):
+                                                    # item.configure["bg"] = "red"
+                                                    item.configure(bg=selected_color)
+                                                    self.cell_course_reset[item] = {confirmed:selected_color}
+                                                    item.configure(text=confirmed)
+                        else: # ---------------------------2 TIME--------------------------------------------------------------------------
+                            for z in range(len(list(cells.cell_data.keys()))):
+                                for day in temp_day:
+                                    for time in temp_secondtime.keys():
+
+                                        if temp_day[0] == list((list(cells.cell_data.values())[z]).keys())[0] and time == \
+                                                list((list(cells.cell_data.values())[z]).values())[0]:
+
+
+                                            print("------eşleşmeÇİFT-------")
+                                            # print(time, day, list((list(cells.cell_data.values())[z]).values())[0],
+                                            #       list((list(cells.cell_data.values())[z]).keys())[0])
+                                            # print(list(cells.cell_data.keys())[z])
+                                            for item in self.cell_object:
+                                                if item == (list(cells.cell_data.keys())[z]):
+                                                    # item.configure["bg"] = "red"
+                                                    item.configure(bg=selected_color)
+                                                    self.cell_course_reset[item] = {confirmed:selected_color}
+                                                    item.configure(text=confirmed)
+                                    for time in temp_secondtime.values():
+                                        if temp_day[1] == list((list(cells.cell_data.values())[z]).keys())[0] and time == \
+                                                list((list(cells.cell_data.values())[z]).values())[0]:
+
+
+                                            print("------eşleşmeÇİFT-------")
+                                            print(time, day, list((list(cells.cell_data.values())[z]).values())[0],
+                                                  list((list(cells.cell_data.values())[z]).keys())[0])
+                                            print(list(cells.cell_data.keys())[z])
+                                            for item in self.cell_object:
+                                                if item == (list(cells.cell_data.keys())[z]):
+                                                    # item.configure["bg"] = "red"
+                                                    item.configure(bg=selected_color)
+                                                    self.cell_course_reset[item] = {confirmed:selected_color}
+                                                    item.configure(text=confirmed)
+
+
+
+        print(data.selected_courses)
+        print(self.cell_course_reset)
+
+
+
+
+
+
+
+
+    def listbox_choice(self,event):
+        self.resetUI() # sarılar kalıyor
+
+        widget = event.widget
+        print("clicked")
+        values = [self.box_courses.get(idx) for idx in self.box_courses.curselection()]
+
+
+        # print(self.box_selected_courses.get(1))
+        selected = values[0][0]
+        print(values[0][0])
+
+        # print(values[0][0])
+        self.temp_select = {}
+        for i in range(len(data.course_data.keys())):
+            if selected == list(data.course_data.keys())[i]:
+
+
+                confirmed = list(data.course_data.keys())[i]
+                self.temp_select[confirmed] = data.course_data[confirmed]
+
+                temp_day = []
+                temp_time = {}
+                temp_secondtime = {}
+                for k in range(len(self.temp_select[confirmed][0])):
+                    # print((data.selected_courses[confirmed][0])[k])
+                    temp_day.append((self.temp_select[confirmed][0])[k])
+
+                for j in range(len(self.temp_select[confirmed][1])):
+                    # print((data.selected_courses[confirmed][1])[j])
+                    if (len(self.temp_select[confirmed][
+                                1])) < 2:  # ---------------------------tek saat  için eklendi---------------------------------------------------------------
+                        time = (self.temp_select[confirmed][1])[0]
+
+                        hour = time[:2]
+                        minute = time[3:5]
+                        finish_hour = time[6:8]
+                        curr = datetime.datetime(2020, 8, 9, int(hour), int(minute), 00, 00)
+
+                        for x in range(2 * (int(finish_hour) - int(hour))):
+                            temp_time[curr.strftime("%H:%M") + "-" + (curr + timedelta(minutes=30)).strftime(
+                                "%H:%M")] = "time"
+
+                            curr = curr + timedelta(minutes=30)
+
+                    else:  # ---------------------------çift saat sorunu için eklendi-------------------------------------------------------------------------------------
+                        time = (self.temp_select[confirmed][1])[j]
+                        if j == 0:
+                            hour = time[:2]
+                            minute = time[3:5]
+                            finish_hour = time[6:8]
+                            curr = datetime.datetime(2020, 8, 9, int(hour), int(minute), 00, 00)
+
+                            for x in range(2 * (int(finish_hour) - int(hour))):
+                                temp_secondtime[curr.strftime("%H:%M") + "-" + (curr + timedelta(minutes=30)).strftime(
+                                    "%H:%M")] = "time"
+
+                                curr = curr + timedelta(minutes=30)
+                        elif j == 1:
+                            hour = time[:2]
+                            minute = time[3:5]
+                            finish_hour = time[6:8]
+                            curr = datetime.datetime(2020, 8, 9, int(hour), int(minute), 00, 00)
+
+                            for x in range(2 * (int(finish_hour) - int(hour))):
+                                temp_secondtime[str(x)] = curr.strftime("%H:%M") + "-" + (
+                                            curr + timedelta(minutes=30)).strftime(
+                                    "%H:%M")
+
+                                curr = curr + timedelta(minutes=30)
+
+                print(temp_time.keys())
+                print(temp_secondtime.keys())
+                print(temp_secondtime.values())
+
+
+                # --------------------------------------------ONE TIME-------------------------------------------------------
+                if (len(self.temp_select[confirmed][1])) < 2:  # tek mi??
+                    for z in range(len(list(cells.cell_data.keys()))):
+                        for day in temp_day:
+                            for time in temp_time.keys():
+
+                                if day == list((list(cells.cell_data.values())[z]).keys())[0] and time == \
+                                        list((list(cells.cell_data.values())[z]).values())[0]:
+
+                                    print("------eşleşme-------")
+                                    print(time, day, list((list(cells.cell_data.values())[z]).values())[0],
+                                          list((list(cells.cell_data.values())[z]).keys())[0])
+                                    print(list(cells.cell_data.keys())[z])
+                                    for item in self.cell_object:
+                                        if item == (list(cells.cell_data.keys())[z]):
+                                            if item["bg"] != "green":
+                                                item.configure(bg="red")
+                                                self.control = 0
+                                            else:
+
+                                            # item.configure["bg"] = "red"
+                                                item.configure(bg="yellow")
+                else:  # ---------------------------2 TIME--------------------------------------------------------------------------
+                    for z in range(len(list(cells.cell_data.keys()))):
+                        for day in temp_day:
+                            for time in temp_secondtime.keys():
+
+                                if temp_day[0] == list((list(cells.cell_data.values())[z]).keys())[0] and time == \
+                                        list((list(cells.cell_data.values())[z]).values())[0]:
+
+                                    print("------eşleşmeÇİFT-------")
+                                    # print(time, day, list((list(cells.cell_data.values())[z]).values())[0],
+                                    #       list((list(cells.cell_data.values())[z]).keys())[0])
+                                    # print(list(cells.cell_data.keys())[z])
+                                    for item in self.cell_object:
+                                        if item == (list(cells.cell_data.keys())[z]):
+                                            # item.configure(bg="yellow")
+                                            if item in list(self.cell_course_reset.keys()):
+                                                item.configure(bg="red")
+                                                self.control = 0
+                                            else:
+
+
+                                                item.configure(bg="yellow")
+
+                            for time in temp_secondtime.values():
+                                if temp_day[1] == list((list(cells.cell_data.values())[z]).keys())[0] and time == \
+                                        list((list(cells.cell_data.values())[z]).values())[0]:
+
+                                    print("------eşleşmeÇİFT-------")
+                                    print(time, day, list((list(cells.cell_data.values())[z]).values())[0],
+                                          list((list(cells.cell_data.values())[z]).keys())[0])
+                                    print(list(cells.cell_data.keys())[z])
+                                    for item in self.cell_object:
+                                        if item == (list(cells.cell_data.keys())[z]):
+                                            if item in list(self.cell_course_reset.keys()):
+                                                item.configure(bg="red")
+                                                self.control = 0
+                                            else:
+
+                                                item.configure(bg="yellow")
+
+
+
+
+
+
+
+
+    def delete_course(self):
+        values = [self.box_selected_courses.get(idx) for idx in self.box_selected_courses.curselection()]
+        deleted = values[0][0]
+
+        for i in range(len(data.course_data.keys())):
+            if deleted == list(data.course_data.keys())[i]:
+                confirmed = list(data.course_data.keys())[i]
+
+                del data.selected_courses[confirmed]
+
+                self.box_selected_courses.delete(self.box_selected_courses.curselection())
+
+        # for i in range(len(list(self.cell_course_reset.keys()))):
+        #     if list((list(self.cell_course_reset.values())[i]).keys())[0] == deleted:
+        #         print(list((list(self.cell_course_reset.values())[i]).keys())[0] + " " + "deleted.")
+        #         del self.cell_course_reset[list(self.cell_course_reset.keys())[i]]
+
+        for item in list(self.cell_course_reset):
+
+
+            if list(self.cell_course_reset[item].keys())[0] == deleted: # sorun var
+                print("deleted")
+                # self.cell_course_reset.pop(list(self.cell_course_reset.keys())[i])
+                item.configure(bg="green",text="")
+                del self.cell_course_reset[item]
+
+
+
+        self.warning_label.configure(text= "Removed", bg="red")
+        print(data.selected_courses)
+        print(self.cell_course_reset)
+
+
+
+
+
+
+
+
+
+
+
+
+class Data:
+    def __init__(self):
+        self.course_data = {}
+        self.time =[]
+        self.days=["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"]
+        self.selected_courses = {}
+        self.selected_colors=[]
+
+
+
+class Cells:
+    def __init__(self):
+        self.frames = []
+        self.colors = ['dodger blue', 'pale turquoise', 'dark turquoise', 'medium turquoise', 'turquoise', 'cyan', 'cadet blue', 'medium aquamarine', 'aquamarine',  'LemonChiffon4', 'cornsilk2','cornsilk4', 'honeydew2', 'dark orchid', 'dark violet', 'blue violet', 'purple']
+        self.cell_data={}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+if __name__ == '__main__':
+        data = Data()
+        cells = Cells()
+        root = Tk()
+        root.geometry("1000x920")
+        root.title("Sehir Faculty Member Search Engine")
+        app = SehirCoursePlanner(root)
+
+        root.mainloop()
+
+
+
+
+
+
